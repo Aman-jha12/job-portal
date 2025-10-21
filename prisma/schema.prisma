@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  RECRUITER
+  APPLICANT
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  INTERNSHIP
+  CONTRACT
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  REJECTED
+  HIRED
+}
+
+model User {
+  id          String        @id @default(uuid())
+  name        String
+  email       String        @unique
+  password    String
+  role        Role          @default(APPLICANT)
+  companies   Company[]     @relation("CompanyOwner")
+  jobs        Job[]         @relation("JobPoster")
+  applications Application[]
+  bookmarks   Bookmark[]
+  notifications Notification[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Company {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  website     String?
+  location    String?
+  ownerId     String
+  owner       User      @relation("CompanyOwner", fields: [ownerId], references: [id])
+  jobs        Job[]
+  createdAt   DateTime  @default(now())
+}
+
+model Job {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  location       String
+  type           JobType
+  salaryRange    String?
+  skillsRequired String[]
+  status         JobStatus        @default(OPEN)
+  companyId      String
+  postedById     String
+  company        Company          @relation(fields: [companyId], references: [id])
+  postedBy       User             @relation("JobPoster", fields: [postedById], references: [id])
+  applications   Application[]
+  bookmarks      Bookmark[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Application {
+  id           String             @id @default(uuid())
+  applicantId  String
+  jobId        String
+  resumeUrl    String
+  coverLetter  String?
+  status       ApplicationStatus  @default(PENDING)
+  appliedAt    DateTime           @default(now())
+  applicant    User               @relation(fields: [applicantId], references: [id])
+  job          Job                @relation(fields: [jobId], references: [id])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  jobId     String
+  user      User     @relation(fields: [userId], references: [id])
+  job       Job      @relation(fields: [jobId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
