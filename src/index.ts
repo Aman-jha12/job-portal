@@ -463,7 +463,7 @@ app.get("/companies/:id",async(req:Request,res:Response)=>{
 
 
 
-    //applications routes would go here
+ //applications routes would go here
 
 app.post("/applications/jobId",async(req:Request,res:Response)=>{  
       const {applicantId,jobId,resume,coverLetter}=req.body;
@@ -562,7 +562,7 @@ app.post("/applications/jobId",async(req:Request,res:Response)=>{
 
 
 
-    app.delete("/bookmarks/:jobId",async(req:Request,res:Response)=>{  
+  app.delete("/bookmarks/:jobId",async(req:Request,res:Response)=>{  
     const {id}=req.params;
       try{
         const bookmark=await prisma.bookmark.delete({
