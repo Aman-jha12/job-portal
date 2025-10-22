@@ -1,6 +1,7 @@
 import express ,{Request,Response} from 'express';
 import jsonwebtoken from 'jsonwebtoken';
 import { PrismaClient } from '@Prisma/client';
+import { JobType } from '@Prisma/client';
 const app=express();
 const prisma=new PrismaClient();
 const port =process.env.PORT || 3000;
@@ -149,10 +150,256 @@ app.put("/companies/:id",async(req:Request,res:Response)=>{
     }})
 
 
+// job routes would go here
+
+// Make sure to import the enum
+
+// You'll also need a 'Request' type that includes your user
+// interface AuthenticatedRequest extends Request {
+//   user: {
+//     id: string;
+//   }
+// }
+// Then use app.post("/jobs", async (req: AuthenticatedRequest, res: Response) => {
+
+app.post("/jobs", async (req: Request, res: Response) => {
+  // We assume an auth middleware has run and added 'req.user'
+  const { id: postedById } = req.user; 
+  // <--- FIX 1: Get user ID from auth
+  const { title, description, location, companyId, jobType } = req.body;
+
+  if (!title || !description || !location || !companyId || !jobType) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  if (!postedById) {
+    return res.status(401).json({ message: "User not authenticated" });
+  }
+
+  try {
+    const newJob = await prisma.job.create({
+      data: {
+        title,
+        description,
+        location,
+        type: jobType as JobType, // <--- FIX 2: Map 'jobType' variable to 'type' field
+        company: { connect: { id: companyId } },
+        postedBy: { connect: { id: postedById } } // <--- FIX 3: Connect the user
+      }
+    });
+    res.status(201).json(newJob);
+  } catch (error) {
+    console.error("Error creating job:", error);
+    res.status(500).json({ "message": "Error while creating a new job", error });
+  }
+});
+
+
+
+app.get("/jobs", async (req: Request, res: Response) => {
+  // Filters come from query parameters: /jobs?location=New+York&type=FULL_TIME
+  const { location, type, skills } = req.query;
+
+  try {
+    // Dynamically build the 'where' filter object
+    const where: prisma.JobWhereInput = {};
+
+    if (location) {
+      where.location = { equals: location as string, mode: 'insensitive' };
+    }
+
+    if (type) {
+      where.type = { equals: type as JobType }; // Assumes 'type' is a valid enum value
+    }
+
+    if (skills) {
+      const skillsArray = Array.isArray(skills)
+        ? (skills as string[])
+        : [skills as string];
+        
+      // Use 'hasSome' to find jobs that have at least one of the skills
+      where.skillsRequired = { hasSome: skillsArray };
+    }
+
+    const jobs = await prisma.job.findMany({
+      where: where,
+      include: {
+        // Include the company's info in the response
+        company: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            website: true
+          }
+        },
+        // Include the poster's info (but not sensitive data like password)
+        postedBy: {
+          select: {
+            id: true,
+            name: true // Assuming your User model has 'name'
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc' // Show newest jobs first
+      }
+    });
+
+    res.status(200).json(jobs);
+
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+app.get("/jobs/:id", async (req: Request, res: Response) => {
+  const { id } = req.params; // Get ID from URL parameter
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id: id },
+      include: {
+        // Include all company details
+        company: true, 
+        // Include poster details
+        postedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true // Or whatever fields you want to show
+          }
+        },
+        // You could even include applications here if you wanted
+        // applications: true, 
+      }
+    });
+
+    // Handle case where job is not found
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.status(200).json(job);
+
+  } catch (error) {
+    console.error("Error fetching job:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 
 
 
+//admin routes
+
+app.get("/users",async(req:Request,res:Response)=>{
+    try{
+        const users=await prisma.user.findMany();
+        res.status(200).json(users);
+    }
+    catch(error){
+        res.status(500).json({message:"Error while fetching users",error});
+    }
+}); 
+
+
+app.get("/companies",async(req:Request,res:Response)=>{
+    try{
+        const companies=await prisma.company.findMany();
+        res.status(200).json(companies);
+    }
+    catch(error){
+        res.status(500).json({message:"Error while fetching companies",error});
+    }
+});
+
+
+app.get("/users/:id",async(req:Request,res:Response)=>{
+  const {id}=req.params;
+  if(!id){
+    return res.status(400).json({message:"User id is required"});
+  }try{
+    const user=await prisma.user.findUnique({
+      where:{id}
+    });
+  if(!user){
+    return res.status(404).json({message:"User not found"});
+  }
+  res.status(200).json(user);
+  }catch(error){
+    res.status(500).json({"message":"Error while fetching user",error});
+  }
+})
+
+app.get("/companies/:id",async(req:Request,res:Response)=>{
+    const {id}=req.params;
+    if(!id){
+      return res.status(400).json({message:"Company id is required"});
+    }
+    try{
+      const company=await prisma.company.findUnique({
+        where:{id}
+      })
+  
+      if(!company){
+        return res.status(404).json({message:"Company not found"});
+      }
+      res.status(200).json(company);
+    }catch(error){
+      res.status(500).json({"message":"Error while fetching company",error});
+    }
+  })
+
+  app.delete("/users/:id",async(req:Request,res:Response)=>{   
+    const {id}=req.params;
+    if(!id){
+      return res.status(400).json({message:"User id is required"});
+    }
+    try{
+      const user=await prisma.user.delete({
+        where:{id}
+      })
+  
+      if(!user){
+        return res.status(404).json({message:"User not found"});
+      }
+      res.status(200).json(user);
+    }catch(error){
+      res.status(500).json({"message":"Error while deleting user",error});
+    }
+  })
+
+
+  app.delete("/companies/:id",async(req:Request,res:Response)=>{   
+    const {id}=req.params;   
+    if(!id){
+      return res.status(400).json({message:"Company id is required"});
+    }
+    try{
+      const company=await prisma.company.delete({
+        where:{id}
+      })
+  
+      if(!company){
+        return res.status(404).json({message:"Company not found"});
+      }
+      res.status(200).json(company);
+    }catch(error){
+      res.status(500).json({"message":"Error while deleting company",error}); 
+    }})
+
+
+    app.get("/jobs",async(req:Request,res:Response)=>{
+      try{
+          const jobs=await prisma.job.findMany();
+          res.status(200).json(jobs);
+      }catch(error){
+          res.status(500).json({"message":"Error while fetching jobs",error});
+      }
+  })
 
    app.listen(port,()=>{
     console.log(`Server is running at http://localhost:${port}`);
