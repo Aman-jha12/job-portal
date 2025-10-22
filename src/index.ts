@@ -1,6 +1,6 @@
 import express ,{Request,Response} from 'express';
 import jsonwebtoken from 'jsonwebtoken';
-import { PrismaClient } from './generated/prisma';
+import { PrismaClient } from '@Prisma/client';
 const app=express();
 const prisma=new PrismaClient();
 const port =process.env.PORT || 3000;
@@ -47,8 +47,39 @@ app.get("/companies",async(req:Request,res:Response)=>{
 });
 
 
-app.post("/companies",async(req:Request,res:Response)=>{
-  const {name,location,}
+app.post("/companies", async (req: Request, res: Response) => {
+  const { name, description, location,owner} = req.body;
+
+  if (!name || !description || !location) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const existingCompany = await prisma.company.findUnique({
+      where: { name }
+    });
+
+    if (existingCompany) {
+      return res.status(409).json({ message: "Company already exists" });
+    }
+
+    const newCompany = await prisma.company.create({
+      data: {
+        name,
+        description,
+        location,
+        owner: { connect: { id: owner } }
+      }
+    });
+
+    res.status(201).json({
+      message: "Successfully created a new company",
+      newCompany
+    });
+  } catch (error) {
+    console.error("Error while creating a new company:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 
