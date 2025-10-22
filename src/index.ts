@@ -462,6 +462,121 @@ app.get("/companies/:id",async(req:Request,res:Response)=>{
 
 
 
+
+    //applications routes would go here
+
+app.post("/applications/jobId",async(req:Request,res:Response)=>{  
+      const {applicantId,jobId,resume,coverLetter}=req.body;
+      try{
+        const application=await prisma.application.create({
+          data:{applicantId,jobId,resume,coverLetter}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while creating application",error});
+      }
+    })
+
+
+
+    app.get("/applications/job/:jobId",async(req:Request,res:Response)=>{  
+      const {jobId}=req.params;
+      if(!jobId){
+        return res.status(400).json({message:"Job id is required"});
+      }
+      try{
+        const applications=await prisma.application.findMany({
+          where:{jobId}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while fetching applications",error});
+      }
+      })
+
+
+      app.patch("/applications/:id/status",async(req:Request,res:Response)=>{  
+      const {id}=req.params;
+      const {status}=req.body;
+      if(!id){
+        return res.status(400).json({message:"Application id is required"});
+      }
+      try{
+        const application=await prisma.application.update({
+          where:{id},
+          data:{status}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while updating application",error});
+      }
+    })
+
+    app.delete("/applications/:id",async(req:Request,res:Response)=>{  
+      const {id}=req.params;
+      if(!id){
+        return res.status(400).json({message:"Application id is required"});
+      }
+      try{
+        const application=await prisma.application.delete({
+          where:{id}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while deleting application",error});
+      }
+    })
+
+  app.get("/applications",async(req:Request,res:Response)=>{  
+      const {id}=req.params;
+      try{
+        const applications=await prisma.application.findMany({
+          where:{applicantId:id}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while fetching applications",error});
+      }
+    })
+
+
+    //bookmarks routes would go here
+    app.post("/bookmarks/:jobId",async(req:Request,res:Response)=>{  
+      const {jobId}=req.params;
+      const {userId}=req.body;
+      try{
+        const bookmark=await prisma.bookmark.create({
+          data:{jobId,userId}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while creating bookmark",error});
+      }
+    })
+
+
+    app.get("/bookmarks",async(req:Request,res:Response)=>{  
+      const {userId}=req.body;
+      try{
+        const bookmarks=await prisma.bookmark.findMany({
+          where:{userId}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while fetching bookmarks",error});
+      }
+    })
+
+
+
+    app.delete("/bookmarks/:jobId",async(req:Request,res:Response)=>{  
+    const {id}=req.params;
+      try{
+        const bookmark=await prisma.bookmark.delete({
+          where:{id:id}
+        })
+      }catch(error){
+        res.status(500).json({"message":"Error while deleting bookmark",error});
+      }
+    })
+
+
+   
+
+
    app.listen(port,()=>{
     console.log(`Server is running at http://localhost:${port}`);
    });
