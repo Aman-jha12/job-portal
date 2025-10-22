@@ -48,9 +48,9 @@ app.get("/companies",async(req:Request,res:Response)=>{
 
 
 app.post("/companies", async (req: Request, res: Response) => {
-  const { name, description, location,owner} = req.body;
+  const { name, description, location,ownerId} = req.body;
 
-  if (!name || !description || !location) {
+  if (!name || !description || !location ||!ownerId) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
@@ -68,7 +68,7 @@ app.post("/companies", async (req: Request, res: Response) => {
         name,
         description,
         location,
-        owner: { connect: { id: owner } }
+        owner: { connect: { id: ownerId } }
       }
     });
 
@@ -81,6 +81,77 @@ app.post("/companies", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
+app.get("/comanies/:id",async(req:Request,res:Response)=>{
+    const {id}=req.params;
+    if(!id){
+      return res.status(400).json({message:"Company id is required"});
+    }
+    try{
+      const company=await prisma.company.findUnique({
+        where:{id}
+      })
+
+      if(!company){
+        return res.status(404).json({message:"Company not found"});
+      }
+      res.status(200).json(company);
+    }catch(error){
+      res.status(500).json({"message":"Error while fetching company",error});
+    }
+})
+
+
+app.put("/companies/:id",async(req:Request,res:Response)=>{
+    const {id}=req.params;
+    const {name,description,location}=req.body;
+    if(!id){
+      return res.status(400).json({message:"Company id is required"});
+    }
+    try{
+      const company=await prisma.company.findUnique({
+        where:{id}
+      })
+
+      if(!company){
+        return res.status(404).json({message:"Company not found"});
+      }
+      const updatedCompany=await prisma.company.update({
+        where:{id},
+        data:{name,description,location}
+      })
+      res.status(200).json(updatedCompany);
+    }catch(error){
+      res.status(500).json({"message":"Error while updating company",error});
+    }
+  })
+      
+ app.delete("/companies/:id",async(req:Request,res:Response)=>{   
+    const {id}=req.params;   
+    if(!id){
+      return res.status(400).json({message:"Company id is required"});
+    }
+    try{
+      const company=await prisma.company.findUnique({
+        where:{id}
+      })
+
+      if(!company){
+        return res.status(404).json({message:"Company not found"});
+      }
+      const deletedCompany=await prisma.company.delete({
+        where:{id}
+      })
+      res.status(200).json(deletedCompany);
+    }catch(error){
+      res.status(500).json({"message":"Error while deleting company",error});
+    }})
+
+
+
+
+
 
 
    app.listen(port,()=>{
