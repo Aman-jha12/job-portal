@@ -152,16 +152,6 @@ app.put("/companies/:id",async(req:Request,res:Response)=>{
 
 // job routes would go here
 
-// Make sure to import the enum
-
-// You'll also need a 'Request' type that includes your user
-// interface AuthenticatedRequest extends Request {
-//   user: {
-//     id: string;
-//   }
-// }
-// Then use app.post("/jobs", async (req: AuthenticatedRequest, res: Response) => {
-
 app.post("/jobs", async (req: Request, res: Response) => {
   // We assume an auth middleware has run and added 'req.user'
   const { id: postedById } = req.user; 
@@ -237,7 +227,7 @@ app.get("/jobs", async (req: Request, res: Response) => {
         postedBy: {
           select: {
             id: true,
-            name: true // Assuming your User model has 'name'
+            name: true //   User model has 'name'
           }
         }
       },
@@ -272,8 +262,6 @@ app.get("/jobs/:id", async (req: Request, res: Response) => {
             email: true // Or whatever fields you want to show
           }
         },
-        // You could even include applications here if you wanted
-        // applications: true, 
       }
     });
 
