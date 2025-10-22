@@ -389,6 +389,79 @@ app.get("/companies/:id",async(req:Request,res:Response)=>{
       }
   })
 
+
+  //notifications route would go here
+
+  app.get("/notifications",async(req:Request,res:Response)=>{
+    try{
+        const notifications=await prisma.notification.findMany();
+        res.status(200).json(notifications);
+    }catch(error){
+        res.status(500).json({"message":"Error while fetching notifications",error});
+    }
+  })
+
+
+  app.get("/notifications/:id",async(req:Request,res:Response)=>{
+    const {id}=req.params;
+    if(!id){
+      return res.status(400).json({message:"Notification id is required"});
+    }
+    try{
+      const notification=await prisma.notification.findUnique({
+        where:{id}
+      })
+  
+      if(!notification){
+        return res.status(404).json({message:"Notification not found"});
+      }
+      res.status(200).json(notification);
+    }catch(error){
+      res.status(500).json({"message":"Error while fetching notification",error});
+    }
+  })
+
+  app.patch("/notifications/:id/read",async(req:Request,res:Response)=>{
+    const {id}=req.params;
+    if(!id){
+      return res.status(400).json({message:"Notification id is required"});
+    }
+    try{
+      const notification=await prisma.notification.update({
+        where:{id},
+        data:{isRead:true}
+      })
+  
+      if(!notification){
+        return res.status(404).json({message:"Notification not found"});
+      }
+      res.status(200).json(notification);
+    }catch(error){
+      res.status(500).json({"message":"Error while updating notification",error});
+    }
+  })
+
+
+  app.delete("/notifications/:id",async(req:Request,res:Response)=>{   
+    const {id}=req.params;   
+    if(!id){
+      return res.status(400).json({message:"Notification id is required"});
+    }
+    try{
+      const notification=await prisma.notification.delete({
+        where:{id}
+      })
+  
+      if(!notification){
+        return res.status(404).json({message:"Notification not found"});
+      }
+      res.status(200).json(notification);
+    }catch(error){
+      res.status(500).json({"message":"Error while deleting notification",error}); 
+    }})
+
+
+
    app.listen(port,()=>{
     console.log(`Server is running at http://localhost:${port}`);
    });
