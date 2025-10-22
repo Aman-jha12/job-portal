@@ -573,8 +573,12 @@ app.post("/applications/jobId",async(req:Request,res:Response)=>{
       }
     })
 
-
+app.post("/upload/resume",async(req:Request,res:Response)=>{  
+    })
    
+
+    app.post("/upload/profileImage",async(req:Request,res:Response)=>{  
+    })
 
 
    app.listen(port,()=>{
