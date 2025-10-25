@@ -32,7 +32,6 @@ app.get("/api/v1", (req: Request, res: Response) => {
 });
 
 // --- API Routes ---
-// Use the imported routers with a base path
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/companies', companyRoutes); // Public GET, protected POST/PUT/DELETE inside
 app.use('/api/v1/jobs', jobRoutes); // Public GET, protected POST inside
@@ -42,7 +41,6 @@ app.use('/api/v1/notifications', authMiddleware, notificationRoutes); // Protect
 app.use('/api/v1/admin', adminRoutes); // All admin routes are protected inside the file
 app.use('/api/v1/upload', uploadRoutes); // Upload routes are protected inside
 
-// --- Start Server ---
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
