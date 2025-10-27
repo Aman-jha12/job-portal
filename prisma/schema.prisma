@@ -45,6 +45,7 @@ model User {
   email       String        @unique
   password    String
   role        Role          @default(APPLICANT)
+  profileImageUrl String?   
   companies   Company[]     @relation("CompanyOwner")
   jobs        Job[]         @relation("JobPoster")
   applications Application[]
